@@ -1,3 +1,4 @@
+import io
 import requests
 import httplib2
 import os
@@ -7,18 +8,19 @@ import time
 
 from google.auth.transport.requests import Request
 from pathlib import Path
-from apiclient.discovery import build as discovery_build
-from apiclient.errors import HttpError
-from apiclient.http import MediaFileUpload
-from apiclient.http import MediaIoBaseDownload
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import MediaIoBaseDownload
 from json import dumps as json_dumps
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage as CredentialStorage
 from oauth2client.tools import run_flow as run_oauth2
+from PIL import Image
 
 CLIENT_SECRETS_FILE = "/home/mike/.secrets/gphotograba/oauth/client_secret_653760331440-dlcjalai9vc0mihun0k68qpbdlgiq1n4.apps.googleusercontent.com.json"
 CREDENTIALS_FILE = "./credentials.json"
-RO_SCOPE = 'https://www.googleapis.com/auth/devstorage.read_only'
+SCOPE = 'https://www.googleapis.com/auth/photoslibrary.readonly'
 
 USAGE = """
 Usage examples:
@@ -52,7 +54,6 @@ DEFAULT_MIMETYPE = 'application/octet-stream'
 
 OUTPUT_DIR = Path("/home/mike/Pictures/g_photos")
 
-
 def get_authenticated_service(scope):
     print( 'Authenticating...')
     flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE, scope=scope,
@@ -65,7 +66,10 @@ def get_authenticated_service(scope):
 
     print( 'Constructing Google Cloud Storage service...')
     http = credentials.authorize(httplib2.Http())
-    return discovery_build('storage', 'v1', http=http)
+    return build('photoslibrary',
+                           'v1',
+                           http=http,
+                           static_discovery=False)
 
 
 
@@ -89,7 +93,7 @@ def download(argv):
     filename = argv[2]
     assert bucket_name and object_name
     
-    service = get_authenticated_service(RO_SCOPE)
+    service = get_authenticated_service(SCOPE)
     
     print( 'Building download request...')
     f = open(filename, 'w')
@@ -124,14 +128,14 @@ def download(argv):
     print('\nDownload complete!')
 
 
-if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print( 'Too few arguments.')
-        print(USAGE)
-    elif sys.argv[1].startswith('gs://'):
-        download(sys.argv)
-    else:
-        print(USAGE)
+## if __name__ == '__main__':
+ #   if len(sys.argv) < 3:
+ #       print( 'Too few arguments.')
+ #       print(USAGE)
+ #   elif sys.argv[1].startswith('gs://'):
+ #       download(sys.argv)
+ #   else:
+ #       print(USAGE)
 
 # method of PhotosAccount class
 def get_google_api_service(self):
@@ -162,3 +166,18 @@ def get_google_api_service(self):
     self.service = build(
             "photoslibrary", "v1", credentials=credentials, static_discovery=False
             )
+
+
+if __name__ == "__main__":
+    photos_service = get_authenticated_service(SCOPE)
+    mediaItems_resource = photos_service.mediaItems()
+    mediaItems_resource_request = mediaItems_resource.list()
+    mediaItems_response = mediaItems_resource_request.execute()
+    mediaItems = mediaItems_response["mediaItems"]
+    first_item = mediaItems[0] 
+    print(first_item)
+    first_item_data = first_item["baseUrl"]
+    print(first_item_data)
+    first_img_bytes = requests.get(first_item_data).content
+    img = Image.open(io.BytesIO(first_img_bytes))
+    img.save("test.jpeg")
