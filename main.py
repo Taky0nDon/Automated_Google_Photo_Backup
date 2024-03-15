@@ -145,3 +145,5 @@ if __name__ == "__main__":
         img_data = requests.get(img_data_url).content
         img = get_img_from_bytes(img_data)
         img.save(f"test_images/1/{name}.jpeg")
+
+        #TODO: write over image data in library?
