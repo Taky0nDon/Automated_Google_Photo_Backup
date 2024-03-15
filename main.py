@@ -128,44 +128,8 @@ def download(argv):
     print('\nDownload complete!')
 
 
-## if __name__ == '__main__':
- #   if len(sys.argv) < 3:
- #       print( 'Too few arguments.')
- #       print(USAGE)
- #   elif sys.argv[1].startswith('gs://'):
- #       download(sys.argv)
- #   else:
- #       print(USAGE)
-
-# method of PhotosAccount class
-def get_google_api_service(self):
-    # The file photos_token.pickle stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first time.
-    credentials = None
-    token_path = self.base_dir + "/photoslibrary_token.pickle"
-
-    if os.path.exists(token_path):
-        with open(token_path, "rb") as token:
-            credentials = pickle.load(token)
-    # If there are no (valid) credentials available, let the user log in.
-    if not credentials or not credentials.valid:
-        if credentials and credentials.expired and credentials.refresh_token:
-            credentials.refresh(Request())
-        else:
-            if not os.path.exists(self.credentials):
-                raise FileNotFoundError(self.credentials + " is not found.")
-
-            flow = InstalledAppFlow.from_client_secrets_file(
-                    self.credentials, SCOPES
-                    )
-            credentials = flow.run_local_server()
-        # Save the credentials for the next run
-        with open(token_path, "wb") as token:
-            pickle.dump(credentials, token)
-
-    self.service = build(
-            "photoslibrary", "v1", credentials=credentials, static_discovery=False
-            )
+def get_img_from_bytes(byte_data: bytes) -> Image.Image:
+    return Image.open(io.BytesIO(byte_data))
 
 
 if __name__ == "__main__":
@@ -174,10 +138,10 @@ if __name__ == "__main__":
     mediaItems_resource_request = mediaItems_resource.list()
     mediaItems_response = mediaItems_resource_request.execute()
     mediaItems = mediaItems_response["mediaItems"]
-    first_item = mediaItems[0] 
-    print(first_item)
-    first_item_data = first_item["baseUrl"]
-    print(first_item_data)
-    first_img_bytes = requests.get(first_item_data).content
-    img = Image.open(io.BytesIO(first_img_bytes))
-    img.save("test.jpeg")
+    i = 0
+    for item in mediaItems:
+        img_data_url = item["baseUrl"]
+        name = item["filename"]
+        img_data = requests.get(img_data_url).content
+        img = get_img_from_bytes(img_data)
+        img.save(f"test_images/1/{name}.jpeg")
