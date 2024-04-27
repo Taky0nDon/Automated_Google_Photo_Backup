@@ -1,4 +1,5 @@
 import io
+import json
 import requests
 import httplib2
 import os
@@ -11,8 +12,8 @@ from pathlib import Path
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
+from googleapiclient.http import HttpRequest
 from googleapiclient.http import MediaIoBaseDownload
-from json import dumps as json_dumps
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage as CredentialStorage
 from oauth2client.tools import run_flow as run_oauth2
@@ -34,7 +35,7 @@ WARNING: Please configure OAuth 2.0
 To make this sample run you will need to populate the client_secrets.json file
 found at:
 
-    {os.path.abspath(os.path.join(os.path.dirname(__file__),
+{os.path.abspath(os.path.join(os.path.dirname(__file__),
                                    CLIENT_SECRETS_FILE))}
 
 with information from the APIs Console
@@ -64,7 +65,7 @@ def get_authenticated_service(scope):
     if credentials is None or credentials.invalid:
         credentials = run_oauth2(flow, credential_storage)
 
-    print( 'Constructing Google Cloud Storage service...')
+    print('Constructing Google Cloud Storage service...')
     http = credentials.authorize(httplib2.Http())
     return build('photoslibrary',
                            'v1',
@@ -136,14 +137,28 @@ if __name__ == "__main__":
     photos_service = get_authenticated_service(SCOPE)
     mediaItems_resource = photos_service.mediaItems()
     mediaItems_resource_request = mediaItems_resource.list()
-    mediaItems_response = mediaItems_resource_request.execute()
-    mediaItems = mediaItems_response["mediaItems"]
+    # mediaItems_response = mediaItems_resource_request.execute()
     i = 0
-    for item in mediaItems:
-        img_data_url = item["baseUrl"]
-        name = item["filename"]
-        img_data = requests.get(img_data_url).content
-        img = get_img_from_bytes(img_data)
-        img.save(f"test_images/1/{name}.jpeg")
+    while mediaItems_resource_request is not None:
+        i += 1
+        print(f"accessing page {i}")
+        current_photos = mediaItems_resource_request.execute()
+        mediaItems = current_photos["mediaItems"]
+        for media in mediaItems:
+            print(f"{media['filename']},", end=" ")
+        mediaItems_resource_request = mediaItems_resource.list_next(mediaItems_resource_request,
+                                                               current_photos)
+
+
+
+    # breakpoint()
+    # for i, item in enumerate(mediaItems):
+    #     if i == len(mediaItems) - 1:
+    #         print(json.dumps(item))
+    #     img_data_url = item["baseUrl"]
+    #     name = item["filename"]
+    #     img_data = requests.get(img_data_url).content
+    #     img = get_img_from_bytes(img_data)
+    #     #img.save(f"test_images/1/{name}.jpeg")
 
         #TODO: write over image data in library?
