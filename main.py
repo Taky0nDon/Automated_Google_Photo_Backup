@@ -20,6 +20,13 @@ SCOPE = 'https://www.googleapis.com/auth/photoslibrary.readonly'
 
 OUTPUT_DIR = Path("/home/mike/Pictures/g_photos")
 
+VID_BASE_URL_SUFFIX = "=dv"
+
+def get_img_url_params(width: str, height: str) -> str:
+    """ Returns string to append to baseUrl for images before getting bytes from API """
+    return f"=d-w{width}-h{height}"
+
+
 def get_authenticated_service(scope):
     print( 'Authenticating...')
     flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE, scope=scope,)
@@ -46,17 +53,17 @@ if __name__ == "__main__":
     photos_service = get_authenticated_service(SCOPE)
     mediaItems_resource = photos_service.mediaItems()
     media_items = mediaItems_resource.list(pageSize=100)
-    i = 0
+    page = 0
     img_nbr = 0
     while media_items is not None:
-        i += 1
-        print(f"accessing page {i}")
+        page += 1
+        print(f"accessing page {page}")
         current_photos = media_items.execute()
         next_page = current_photos["nextPageToken"]
         try:
             mediaItems = current_photos["mediaItems"]
         except KeyError as e:
-            print(f"Failed to find 'mediaItems' key in page {i} response."
+            print(f"Failed to find 'mediaItems' key in page {page} response."
                   f"pageToken: {next_page}"
                   )
             print(current_photos)
@@ -72,15 +79,18 @@ if __name__ == "__main__":
                 img_width = media['mediaMetadata']['width']
                 img_height = media['mediaMetadata']['height']
                 name = media['filename']
-                base_url = media["baseUrl"] + "=d"
+                base_url = media["baseUrl"] 
                 print(base_url)
-                img_data_url = base_url
                 print(f"Downloading image {img_nbr}: {name}"
                       f"Created: {time_created}")
-                img_data = requests.get(img_data_url, timeout=1000).content
+                img_base_url = base_url + get_img_url_params(img_width, img_height)
+                img_data = requests.get(img_base_url,
+                                        timeout=1000).content
                 img = get_img_from_bytes(img_data)
                 print(f"Downloading {name}")
                 if name[-4:] == ".mp4":
+                    video_data_url = base_url + VID_BASE_URL_SUFFIX
+                    video_bytes = requests.get(video_data_url, timeout=1000).content
                     with open("./test_video_bytes", "wb") as file:
                         file.write(img_data)
                 try:
