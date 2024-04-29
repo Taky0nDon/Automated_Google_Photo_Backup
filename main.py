@@ -1,3 +1,5 @@
+# 173 pages?flk
+# change pageSize to 100
 import io
 import json
 import requests
@@ -136,19 +138,54 @@ def get_img_from_bytes(byte_data: bytes) -> Image.Image:
 if __name__ == "__main__":
     photos_service = get_authenticated_service(SCOPE)
     mediaItems_resource = photos_service.mediaItems()
-    mediaItems_resource_request = mediaItems_resource.list()
+    mediaItems_resource_request = mediaItems_resource.list(pageSize=100)
     # mediaItems_response = mediaItems_resource_request.execute()
     i = 0
+    img_nbr = 0
     while mediaItems_resource_request is not None:
         i += 1
         print(f"accessing page {i}")
         current_photos = mediaItems_resource_request.execute()
-        mediaItems = current_photos["mediaItems"]
-        for media in mediaItems:
-            print(f"{media['filename']},", end=" ")
-        mediaItems_resource_request = mediaItems_resource.list_next(mediaItems_resource_request,
-                                                               current_photos)
-
+        try:
+            mediaItems = current_photos["mediaItems"]
+        except KeyError as e:
+            print(f"Failed to find 'mediaItems' key in page {i} response."
+                  f"pageToken: {next_page}"
+                  )
+            print(current_photos)
+            print(e.__repr__())
+            with open("./log", "a") as log_file:
+                log_file.write(json.dumps(current_photos))
+        else:
+            for media in mediaItems:
+                img_nbr += 1
+                time_created = media['mediaMetadata']['creationTime']
+                img_width = media['mediaMetadata']['width']
+                img_height = media['mediaMetadata']['height']
+                name = media['filename']
+                base_url = media["baseUrl"] + "=d" + f"-w{img_width}-h{img_height}"
+                print(base_url)
+                img_data_url = base_url
+                print(f"Downloading image {img_nbr}: {name}"
+                      f"Created: {time_created}")
+                img_data = requests.get(img_data_url).content
+                img = get_img_from_bytes(img_data)
+                print(f"Downloading {name}")
+                if name[:-4] == ".mp4":
+                    continue
+                try:
+                    img.save(f"/home/mike/extra-storage/google_photos/{name[:-4]}.png")
+                except ValueError as e:
+                    print(current_photos)
+                    print(e.__repr__())
+                    with open("./log", "a") as log_file:
+                        log_file.write(json.dumps(media))
+        finally:
+            next_page = current_photos["nextPageToken"]
+            mediaItems_resource_request = mediaItems_resource\
+                                            .list_next(mediaItems_resource_request,
+                                                       current_photos)
+            break
 
 
     # breakpoint()
