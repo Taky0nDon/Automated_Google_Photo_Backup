@@ -16,7 +16,7 @@ from PIL import Image
 CLIENT_SECRETS_FILE = "/home/mike/.secrets/gphotograba/oauth/client_secret_6537"\
                       "60331440-dlcjalai9vc0mihun0k68qpbdlgiq1n4.apps.googleuse"\
                       "rcontent.com.json"
-CREDENTIALS_FILE = "./credentials.json"
+CREDENTIALS_FILE = "../credentials.json"
 SCOPE = 'https://www.googleapis.com/auth/photoslibrary.readonly'
 
 IMG_OUTPUT_DIR = Path("/home/mike/extra-storage/google_photos/pics")
