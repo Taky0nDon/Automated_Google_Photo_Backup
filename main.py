@@ -2,6 +2,7 @@
 # change pageSize to 100
 import io
 import json
+from socket import timeout
 import requests
 import httplib2
 
@@ -18,7 +19,8 @@ CLIENT_SECRETS_FILE = "/home/mike/.secrets/gphotograba/oauth/client_secret_6537"
 CREDENTIALS_FILE = "./credentials.json"
 SCOPE = 'https://www.googleapis.com/auth/photoslibrary.readonly'
 
-OUTPUT_DIR = Path("/home/mike/Pictures/g_photos")
+OUTPUT_DIR = Path("/home/mike/extra-storage/google_photos/pics")
+VID_OUTPUT_DIR = Path(OUTPUT_DIR, "vid")
 
 VID_BASE_URL_SUFFIX = "=dv"
 
@@ -75,32 +77,27 @@ if __name__ == "__main__":
                 img_nbr += 1
                 if img_nbr > MAX_IMAGES:
                     quit()
-                time_created = media['mediaMetadata']['creationTime']
-                img_width = media['mediaMetadata']['width']
-                img_height = media['mediaMetadata']['height']
-                name = media['filename']
+
                 base_url = media["baseUrl"] 
-                print(base_url)
+                time_created = media['mediaMetadata']['creationTime']
+                name = media['filename']
                 print(f"Downloading image {img_nbr}: {name}"
                       f"Created: {time_created}")
-                img_base_url = base_url + get_img_url_params(img_width, img_height)
-                img_data = requests.get(img_base_url,
-                                        timeout=1000).content
-                img = get_img_from_bytes(img_data)
-                print(f"Downloading {name}")
+
                 if name[-4:] == ".mp4":
                     video_data_url = base_url + VID_BASE_URL_SUFFIX
                     video_bytes = requests.get(video_data_url, timeout=1000).content
                     print(f"{video_data_url=}")
-                    with open("./test_video_bytes", "wb") as file:
+                    with open(f"{VID_OUTPUT_DIR}/{name}", "wb") as file:
                         file.write(video_bytes)
-                try:
-                    img.save(f"/home/mike/extra-storage/google_photos/{name[:-4]}.png")
-                except ValueError as e:
-                    print(current_photos)
-                    print(e.__repr__())
-                    with open("./log", "a", encoding="utf-8") as log_file:
-                        log_file.write(json.dumps(media))
+                    continue
+
+                img_width = media['mediaMetadata']['width']
+                img_height = media['mediaMetadata']['height']
+                img_base_url = base_url + get_img_url_params(img_width, img_height)
+                img_bytes = requests.get(img_base_url, timeout=1000).content
+                with open(f"{OUTPUT_DIR}/{name}", "wb") as img_file:
+                    img_file.write(img_bytes)
         finally:
             next_page = current_photos["nextPageToken"]
             media_items = mediaItems_resource\
