@@ -65,6 +65,9 @@ if __name__ == "__main__":
                 log_file.write(json.dumps(current_photos))
         else:
             for media in mediaItems:
+                if img_nbr > MAX_IMAGES:
+                    quit()
+                img_nbr += 1
                 time_created = media['mediaMetadata']['creationTime']
                 img_width = media['mediaMetadata']['width']
                 img_height = media['mediaMetadata']['height']
@@ -77,7 +80,6 @@ if __name__ == "__main__":
                 img_data = requests.get(img_data_url, timeout=1000).content
                 img = get_img_from_bytes(img_data)
                 print(f"Downloading {name}")
-                img_nbr += 1
                 if name[:-4] == ".mp4":
                     continue
                 try:
@@ -92,5 +94,3 @@ if __name__ == "__main__":
             media_items = mediaItems_resource\
                                             .list_next(media_items,
                                                        current_photos)
-            if img_nbr > MAX_IMAGES:
-                media_items = None
