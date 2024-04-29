@@ -81,9 +81,8 @@ if __name__ == "__main__":
                 img = get_img_from_bytes(img_data)
                 print(f"Downloading {name}")
                 if name[-4:] == ".mp4":
-                    with open("./test_video_bytes", "w", encoding="utf-8") as file:
-                        file.write(img_data.decode("utf-8"))
-                    breakpoint()
+                    with open("./test_video_bytes", "wb") as file:
+                        file.write(img_data)
                 try:
                     img.save(f"/home/mike/extra-storage/google_photos/{name[:-4]}.png")
                 except ValueError as e:
