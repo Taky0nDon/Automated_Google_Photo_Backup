@@ -72,7 +72,7 @@ if __name__ == "__main__":
                 img_width = media['mediaMetadata']['width']
                 img_height = media['mediaMetadata']['height']
                 name = media['filename']
-                base_url = media["baseUrl"] + "=d" + f"-w{img_width}-h{img_height}"
+                base_url = media["baseUrl"] + "=d"
                 print(base_url)
                 img_data_url = base_url
                 print(f"Downloading image {img_nbr}: {name}"
