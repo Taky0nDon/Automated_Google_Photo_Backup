@@ -29,6 +29,13 @@ def get_img_url_params(width: str, height: str) -> str:
     return f"=d-w{width}-h{height}"
 
 
+VID_BASE_URL_SUFFIX = "=dv"
+
+def get_img_url_params(width: str, height: str) -> str:
+    """ Returns string to append to baseUrl for images before getting bytes from API """
+    return f"=d-w{width}-h{height}"
+
+
 def get_authenticated_service(scope):
     print( 'Authenticating...')
     flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE, scope=scope,)
@@ -76,6 +83,7 @@ if __name__ == "__main__":
                 base_url = media["baseUrl"] 
                 time_created = media['mediaMetadata']['creationTime']
                 name = media['filename']
+<<<<<<< HEAD
                 print(f"Downloading file {img_nbr}: {name}\n"
                       f"Created: {time_created}")
 
@@ -96,6 +104,29 @@ if __name__ == "__main__":
                 with open(file_path, "wb") as vid_file:
                     vid_file.write(raw_bytes)
                 print("Done.")
+=======
+                base_url = media["baseUrl"] 
+                print(base_url)
+                print(f"Downloading image {img_nbr}: {name}"
+                      f"Created: {time_created}")
+                img_base_url = base_url + get_img_url_params(img_width, img_height)
+                img_data = requests.get(img_base_url,
+                                        timeout=1000).content
+                img = get_img_from_bytes(img_data)
+                print(f"Downloading {name}")
+                if name[-4:] == ".mp4":
+                    video_data_url = base_url + VID_BASE_URL_SUFFIX
+                    video_bytes = requests.get(video_data_url, timeout=1000).content
+                    with open("./test_video_bytes", "wb") as file:
+                        file.write(img_data)
+                try:
+                    img.save(f"/home/mike/extra-storage/google_photos/{name[:-4]}.png")
+                except ValueError as e:
+                    print(current_photos)
+                    print(e.__repr__())
+                    with open("./log", "a", encoding="utf-8") as log_file:
+                        log_file.write(json.dumps(media))
+>>>>>>> 7f8ee45 (small refactor, cleaned working directory)
         finally:
             next_page = current_photos["nextPageToken"]
             media_items = mediaItems_resource\
