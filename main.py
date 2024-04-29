@@ -47,7 +47,7 @@ def get_authenticated_service(scope):
 
 
 if __name__ == "__main__":
-    MAX_IMAGES = 10
+    MAX_IMAGES = 200
     photos_service = get_authenticated_service(SCOPE)
     mediaItems_resource = photos_service.mediaItems()
     media_items = mediaItems_resource.list(pageSize=100)
@@ -80,22 +80,22 @@ if __name__ == "__main__":
                       f"Created: {time_created}")
 
                 if name[-4:] == ".mp4":
-                    video_data_url = base_url + VID_BASE_URL_SUFFIX
-                    video_bytes = requests.get(video_data_url, timeout=1000).content
-                    video_file_path = Path(VID_OUTPUT_DIR, name)
-                    print(f"Writing video data to {video_file_path}.")
-                    with open(video_file_path, "wb") as vid_file:
-                        vid_file.write(video_bytes)
-                    continue
+                    data_url = base_url + VID_BASE_URL_SUFFIX
+                    raw_bytes = requests.get(data_url, timeout=1000).content
+                    file_path = Path(VID_OUTPUT_DIR, name)
+                    file_type = "video"
+                else:
+                    img_width = media['mediaMetadata']['width']
+                    img_height = media['mediaMetadata']['height']
+                    data_url = base_url + get_img_url_params(img_width, img_height)
+                    raw_bytes = requests.get(data_url, timeout=1000).content
+                    file_path = Path(IMG_OUTPUT_DIR, name)
+                    file_type = "image"
 
-                img_width = media['mediaMetadata']['width']
-                img_height = media['mediaMetadata']['height']
-                img_base_url = base_url + get_img_url_params(img_width, img_height)
-                img_bytes = requests.get(img_base_url, timeout=1000).content
-                img_file_path = Path(IMG_OUTPUT_DIR, name)
-                print(f"Writing image data to {img_file_path}.")
-                with open(img_file_path, "wb") as img_file:
-                    img_file.write(img_bytes)
+                print(f"Writing {file_type} data to {file_path}.")
+                with open(file_path, "wb") as vid_file:
+                    vid_file.write(raw_bytes)
+                print("Done.")
         finally:
             next_page = current_photos["nextPageToken"]
             media_items = mediaItems_resource\
