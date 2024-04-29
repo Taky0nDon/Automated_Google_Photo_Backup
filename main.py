@@ -19,8 +19,8 @@ CLIENT_SECRETS_FILE = "/home/mike/.secrets/gphotograba/oauth/client_secret_6537"
 CREDENTIALS_FILE = "./credentials.json"
 SCOPE = 'https://www.googleapis.com/auth/photoslibrary.readonly'
 
-OUTPUT_DIR = Path("/home/mike/extra-storage/google_photos/pics")
-VID_OUTPUT_DIR = Path(OUTPUT_DIR, "vid")
+IMG_OUTPUT_DIR = Path("/home/mike/extra-storage/google_photos/pics")
+VID_OUTPUT_DIR = Path(IMG_OUTPUT_DIR, "vid")
 
 VID_BASE_URL_SUFFIX = "=dv"
 
@@ -46,12 +46,8 @@ def get_authenticated_service(scope):
                  static_discovery=False)
 
 
-def get_img_from_bytes(byte_data: bytes) -> Image.Image:
-    return Image.open(io.BytesIO(byte_data))
-
-
 if __name__ == "__main__":
-    MAX_IMAGES = 1
+    MAX_IMAGES = 10
     photos_service = get_authenticated_service(SCOPE)
     mediaItems_resource = photos_service.mediaItems()
     media_items = mediaItems_resource.list(pageSize=100)
@@ -68,10 +64,9 @@ if __name__ == "__main__":
             print(f"Failed to find 'mediaItems' key in page {page} response."
                   f"pageToken: {next_page}"
                   )
-            print(current_photos)
-            print(repr(e))
             with open("./log", "a") as log_file:
                 log_file.write(json.dumps(current_photos))
+                log_file.write(repr(e))
         else:
             for media in mediaItems:
                 img_nbr += 1
@@ -81,22 +76,25 @@ if __name__ == "__main__":
                 base_url = media["baseUrl"] 
                 time_created = media['mediaMetadata']['creationTime']
                 name = media['filename']
-                print(f"Downloading image {img_nbr}: {name}"
+                print(f"Downloading file {img_nbr}: {name}\n"
                       f"Created: {time_created}")
 
                 if name[-4:] == ".mp4":
                     video_data_url = base_url + VID_BASE_URL_SUFFIX
                     video_bytes = requests.get(video_data_url, timeout=1000).content
-                    print(f"{video_data_url=}")
-                    with open(f"{VID_OUTPUT_DIR}/{name}", "wb") as file:
-                        file.write(video_bytes)
+                    video_file_path = Path(VID_OUTPUT_DIR, name)
+                    print(f"Writing video data to {video_file_path}.")
+                    with open(video_file_path, "wb") as vid_file:
+                        vid_file.write(video_bytes)
                     continue
 
                 img_width = media['mediaMetadata']['width']
                 img_height = media['mediaMetadata']['height']
                 img_base_url = base_url + get_img_url_params(img_width, img_height)
                 img_bytes = requests.get(img_base_url, timeout=1000).content
-                with open(f"{OUTPUT_DIR}/{name}", "wb") as img_file:
+                img_file_path = Path(IMG_OUTPUT_DIR, name)
+                print(f"Writing image data to {img_file_path}.")
+                with open(img_file_path, "wb") as img_file:
                     img_file.write(img_bytes)
         finally:
             next_page = current_photos["nextPageToken"]
