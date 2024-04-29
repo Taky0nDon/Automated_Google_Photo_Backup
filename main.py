@@ -1,8 +1,6 @@
 """A simple program for archiving your google photos"""
 # change pageSize to 100
-import io
 import json
-from socket import timeout
 import requests
 import httplib2
 
@@ -11,7 +9,6 @@ from googleapiclient.discovery import build
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage as CredentialStorage
 from oauth2client.tools import run_flow as run_oauth2
-from PIL import Image
 
 CLIENT_SECRETS_FILE = "/home/mike/.secrets/gphotograba/oauth/client_secret_6537"\
                       "60331440-dlcjalai9vc0mihun0k68qpbdlgiq1n4.apps.googleuse"\
