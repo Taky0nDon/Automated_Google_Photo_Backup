@@ -91,8 +91,9 @@ if __name__ == "__main__":
                 if name[-4:] == ".mp4":
                     video_data_url = base_url + VID_BASE_URL_SUFFIX
                     video_bytes = requests.get(video_data_url, timeout=1000).content
+                    print(f"{video_data_url=}")
                     with open("./test_video_bytes", "wb") as file:
-                        file.write(img_data)
+                        file.write(video_bytes)
                 try:
                     img.save(f"/home/mike/extra-storage/google_photos/{name[:-4]}.png")
                 except ValueError as e:
