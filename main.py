@@ -65,9 +65,9 @@ if __name__ == "__main__":
                 log_file.write(json.dumps(current_photos))
         else:
             for media in mediaItems:
+                img_nbr += 1
                 if img_nbr > MAX_IMAGES:
                     quit()
-                img_nbr += 1
                 time_created = media['mediaMetadata']['creationTime']
                 img_width = media['mediaMetadata']['width']
                 img_height = media['mediaMetadata']['height']
@@ -81,7 +81,8 @@ if __name__ == "__main__":
                 img = get_img_from_bytes(img_data)
                 print(f"Downloading {name}")
                 if name[:-4] == ".mp4":
-                    continue
+                    with open("test_video_bytes", "w", encoding="utf-8") as file:
+                        file.write(img_data.decode("utf-8"))
                 try:
                     img.save(f"/home/mike/extra-storage/google_photos/{name[:-4]}.png")
                 except ValueError as e:
